@@ -1,0 +1,127 @@
+logging:
+  mode: # Choose between "online" or "offline"
+  project: # Specify the project name
+  notes: # Detailed description of the run
+  log_comment: # Add a note to name the local logging folder
+  tags: # Assign tags for categorization, e.g., ["baseline", "run1"]
+    - "tag1"
+    - "tag2"
+    - "..."
+  wandb_dir: # Path to store wandb files (directory must exist)
+  log_dir: # Path to store logs and related outputs
+  level: # Logging level (one of ["critical", "error", "warning", "info", "debug"])
+  log_images: # Whether to log images to WandB (default: False)
+  group: # WandB group name (optional, default: None)
+
+random_seed: # Random seed for reproducibility
+
+gpu: # Number of GPUs to use
+
+data:
+  dataset: # Dataset name
+  dataset_path: # Dataset path, refer to ./docs/readmes/pannuke.md for details
+  train_folds: [] # Folds to use for training
+  val_split: # Proportion of training data for validation (use either val_split or val_fold, not both)
+  test_folds: [] # Folds to use for final testing
+  input_shape: # Input data shape (optional, default: 256)
+
+model:
+  backbone: # Backbone type (options: default, ViT256, SAM-B, SAM-L, SAM-H)
+  pretrained_encoder: # Path to a pretrained encoder
+  pretrained: # Path to a pretrained model (.pt file, default: None)
+  embed_dim: 768 # Embedding dimension for ViT
+  input_channels: 3 # Input channels, typically 3 for RGB (default: 3)
+  depth: 12 # Number of transformer blocks
+  num_heads: 12 # Number of attention heads
+  extract_layers: [3,6,9,12] # Layers to extract for skip connections
+  shared_decoders: False # Whether to share decoder networks except heads (default: False)
+  regression_loss: False # Whether to use regression loss for binary prediction head (default: False)
+  den_loss: True
+
+loss:
+  nuclei_binary_map:
+    focaltverskyloss:
+      loss_fn: FocalTverskyLoss
+      weight: 1
+    dice:
+      loss_fn: dice_loss
+      weight: 1
+  hv_map:
+    mse:
+      loss_fn: mse_loss_maps
+      weight: 2.5
+    msge:
+      loss_fn: msge_loss_maps
+      weight: 8
+  den_map:
+    mse:
+      loss_fn: mse_loss_maps
+      weight: 2.5
+    L1LossWeighted:
+      loss_fn: L1LossWeighted
+      weight: 8
+
+training:
+  batch_size: 16 # Batch size
+  epochs: 100 # Number of training epochs
+  unfreeze_epoch: 0 # Epoch to unfreeze backbone
+  drop_rate: 0 # Dropout rate (default: 0)
+  attn_drop_rate: 0.1 # Attention dropout rate
+  drop_path_rate: 0.1 # Drop path rate
+  optimizer: AdamW # Optimizer type (supports any torch optimizer from v1.13)
+  optimizer_hyperparameter:
+    betas:
+    - 0.85
+    - 0.95
+    lr: 0.0003
+    weight_decay: 0.0001
+  early_stopping_patience: 60 # Number of epochs without improvement before stopping
+  scheduler:
+    scheduler_type: exponential
+    hyperparameters:
+      gamma: 0.85
+  sampling_strategy: "random" # Sampling strategy (default: "random")
+  sampling_gamma: 0.85 # Sampling balance parameter (0: equal weights, 1: full oversampling)
+  mixed_precision: False # Enable mixed precision (default: False)
+  eval_every: 1 # Validate every N epochs (default: 1)
+
+transformations:
+  randomrotate90:
+    p: 0.5
+  horizontalflip:
+    p: 0.5
+  verticalflip:
+    p: 0.5
+  downscale:
+    p: 0.15
+    scale: 0.5
+  blur:
+    p: 0.2
+    blur_limit: 10
+  gaussnoise:
+    p: 0.25
+    var_limit: 50
+  colorjitter:
+    p: 0.2
+    scale_setting: 0.25
+    scale_color: 0.1
+  superpixels:
+    p: 0.1
+  zoomblur:
+    p: 0.1
+  randomsizedcrop:
+    p: 0.1
+  elastictransform:
+    p: 0.2
+  normalize:
+    mean:
+    - 0.5
+    - 0.5
+    - 0.5
+    std:
+    - 0.5
+    - 0.5
+    - 0.5
+eval_checkpoint: model_best.pth
+run_sweep: false
+agent: null
